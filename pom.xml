@@ -61,6 +61,17 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+			<plugin>
+				<groupId>org.liquibase</groupId>
+				<artifactId>liquibase-maven-plugin</artifactId>
+				<version>4.3.0</version>
+				<configuration>
+					<url>${DB_URL}</url>
+					<username>${DB_USER}</username>
+					<password>${DB_PASSWORD}</password>
+					<changeLogFile>src/main/resources/db/changelog/db.changelog-master.xml</changeLogFile>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 
