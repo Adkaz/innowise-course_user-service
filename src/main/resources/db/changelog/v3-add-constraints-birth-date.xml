@@ -5,7 +5,10 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.30.xsd">
 
-    <include file="v1-create-tables.xml" relativeToChangelogFile="true"/>
-    <include file="v2-add-audit-columns.xml" relativeToChangelogFile="true"/>
-    <include file="v3-add-constraints-birth-date.xml" relativeToChangelogFile="true"/>
+    <changeSet id="1" author="Pavel Kiryanov">
+        <addNotNullConstraint
+                tableName="users"
+                columnName="birth_date"
+                columnDataType="date"/>
+    </changeSet>
 </databaseChangeLog>
