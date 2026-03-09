@@ -5,10 +5,10 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.30.xsd">
 
-    <changeSet id="6" author="Pavel Kiryanov">
-        <addNotNullConstraint
-                tableName="users"
-                columnName="birth_date"
-                columnDataType="date"/>
+    <changeSet id="7" author="Pavel Kiryanov">
+        <addUniqueConstraint
+                tableName="payment_cards"
+                columnNames="number"
+                constraintName="uk_payment_cards_number"/>
     </changeSet>
 </databaseChangeLog>

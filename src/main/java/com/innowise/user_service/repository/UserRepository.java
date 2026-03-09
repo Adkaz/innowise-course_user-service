@@ -25,4 +25,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query(value = "UPDATE users SET name =?2, surname = ?3, email = ?4, birth_date = ?5, active = ?6 WHERE id = ?1",
             nativeQuery = true)
     int updateUser(Long id, String name, String surname, String email, LocalDate birthDate, boolean active);
+
+    @Modifying
+    @Query(value = "INSERT INTO users (name, surname, email, birth_date, active)" +
+            " VALUES(?1, ?2, ?3, ?4, ?5)", nativeQuery = true)
+    int createUser(String name, String surname, String email, LocalDate birthDate, boolean active );
 }
