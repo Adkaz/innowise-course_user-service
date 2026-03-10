@@ -1,7 +1,11 @@
 package com.innowise.user_service.repository;
 
 import com.innowise.user_service.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,10 +15,11 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
 
     Optional<User> getUserById(Long id);
 
+    Page<User> getAllUsersWithFilter(Specification<User> spec, Pageable pageable);
 
     @Modifying
     @Query("UPDATE User u SET u.active = :active WHERE u.id = :id")

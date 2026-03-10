@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface    PaymentCardRepository extends JpaRepository<PaymentCard, Long> {
+public interface PaymentCardRepository extends JpaRepository<PaymentCard, Long> {
 
     Optional<PaymentCard> getPaymentCardById(Long id);
 
