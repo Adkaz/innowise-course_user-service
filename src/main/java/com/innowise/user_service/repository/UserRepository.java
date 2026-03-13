@@ -19,6 +19,7 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
 
     Optional<User> getUserById(Long id);
 
+    @Query("SELECT u FROM User u")
     Page<User> getAllUsersWithFilter(Specification<User> spec, Pageable pageable);
 
     @Modifying
