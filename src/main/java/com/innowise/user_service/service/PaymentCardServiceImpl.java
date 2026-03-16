@@ -13,11 +13,13 @@ import com.innowise.user_service.repository.PaymentCardRepository;
 import com.innowise.user_service.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.*;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@CacheConfig("cards")
 public class PaymentCardServiceImpl implements PaymentCardService {
     @Autowired
     private PaymentCardRepository paymentCardRepository;
@@ -30,6 +32,10 @@ public class PaymentCardServiceImpl implements PaymentCardService {
 
     @Override
     @Transactional
+    @Caching(
+            put = {@CachePut(key = "#result.id")},
+            evict = {@CacheEvict(key = "#userId")}
+    )
     public PaymentCardResponseDto createPaymentCard(Long userId, PaymentCardCreateDto paymentCardCreateDto) {
         User user = userRepository.getUserById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
@@ -56,6 +62,7 @@ public class PaymentCardServiceImpl implements PaymentCardService {
     }
 
     @Override
+    @Cacheable(key = "#id", sync = true)
     public PaymentCardResponseDto getPaymentCardById(Long id) {
         PaymentCard paymentCard = paymentCardRepository.getPaymentCardById(id)
                 .orElseThrow(() -> new PaymentCardNotFoundException(id));
@@ -63,6 +70,7 @@ public class PaymentCardServiceImpl implements PaymentCardService {
     }
 
     @Override
+    @Cacheable(key = "#userId", sync = true)
     public List<PaymentCardResponseDto> getPaymentCardsByUserId(Long userId) {
         if (!userRepository.existsById(userId)) {
             throw new UserNotFoundException(userId);
@@ -75,6 +83,10 @@ public class PaymentCardServiceImpl implements PaymentCardService {
 
     @Override
     @Transactional
+    @Caching(
+            put = {@CachePut(key = "#result.id")},
+            evict = {@CacheEvict(key = "#result.userId")}
+    )
     public PaymentCardResponseDto updatePaymentCard(Long id, PaymentCardUpdateDto paymentCardUpdateDto) {
         PaymentCard paymentCard = paymentCardRepository.getPaymentCardById(id)
                 .orElseThrow(() -> new PaymentCardNotFoundException(id));
@@ -85,15 +97,21 @@ public class PaymentCardServiceImpl implements PaymentCardService {
 
     @Override
     @Transactional
-    public void deletePaymentCard(Long id) {
-        if (!paymentCardRepository.existsById(id)) {
-            throw new PaymentCardNotFoundException(id);
-        }
+    @Caching(
+            evict = {@CacheEvict(key = "#id"), @CacheEvict(key = "#result.userId")}
+    )
+    public PaymentCardResponseDto deletePaymentCard(Long id) {
+        PaymentCard paymentCard = paymentCardRepository.getPaymentCardById(id).orElseThrow(() -> new PaymentCardNotFoundException(id));
         paymentCardRepository.deleteById(id);
+        return paymentCardMapper.toResponseDto(paymentCard);
     }
 
     @Override
     @Transactional
+    @Caching(
+            put = {@CachePut(key = "#result.id")},
+            evict = {@CacheEvict(key = "#result.userId")}
+    )
     public PaymentCardResponseDto setPaymentCardActive(Long id, boolean active) {
         PaymentCard paymentCard = paymentCardRepository.getPaymentCardById(id)
                 .orElseThrow(() -> new PaymentCardNotFoundException(id));
