@@ -1,8 +1,9 @@
 package com.innowise.user_service.dto;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 
-public class UserResponseDto {
+public class UserResponseDto implements Serializable {
     private Long id;
     private String name;
     private String surname;

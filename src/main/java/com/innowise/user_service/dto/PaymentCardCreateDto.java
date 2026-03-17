@@ -3,7 +3,9 @@ package com.innowise.user_service.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 
-public class PaymentCardCreateDto {
+import java.io.Serializable;
+
+public class PaymentCardCreateDto implements Serializable {
     @NotBlank
     @Pattern(regexp = "^([0-9]{16})$")
     private String number;

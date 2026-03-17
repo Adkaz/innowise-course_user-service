@@ -4,9 +4,10 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Past;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 
-public class UserCreateDto {
+public class UserCreateDto implements Serializable {
     @NotBlank
     private String name;
 

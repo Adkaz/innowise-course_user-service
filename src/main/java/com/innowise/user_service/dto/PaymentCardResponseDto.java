@@ -1,6 +1,8 @@
 package com.innowise.user_service.dto;
 
-public class PaymentCardResponseDto {
+import java.io.Serializable;
+
+public class PaymentCardResponseDto implements Serializable {
     private Long id;
     private Long userId;
     private String number;
