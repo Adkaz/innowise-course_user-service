@@ -5,10 +5,13 @@ import com.innowise.user_service.dto.PaymentCardResponseDto;
 import com.innowise.user_service.dto.PaymentCardUpdateDto;
 import com.innowise.user_service.entity.PaymentCard;
 import com.innowise.user_service.entity.User;
+import com.innowise.user_service.exception.custom.PaymentCardNotFoundException;
+import com.innowise.user_service.exception.custom.UserNotFoundException;
 import com.innowise.user_service.mapper.PaymentCardMapper;
 import com.innowise.user_service.repository.PaymentCardRepository;
 import com.innowise.user_service.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.cache.annotation.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +31,10 @@ public class PaymentCardServiceImpl implements PaymentCardService {
 
     @Override
     @Transactional
+    @Caching(
+            put = {@CachePut(cacheNames = "cardById", key = "#result.id")},
+            evict = {@CacheEvict(cacheNames = "cardsByUserId", key = "#userId")}
+    )
     public PaymentCardResponseDto createPaymentCard(Long userId, PaymentCardCreateDto paymentCardCreateDto) {
         User user = userRepository.getUserById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id:" + userId));
@@ -47,6 +54,7 @@ public class PaymentCardServiceImpl implements PaymentCardService {
     }
 
     @Override
+    @Cacheable(cacheNames = "cardById", key = "#id", sync = true)
     public PaymentCardResponseDto getPaymentCardById(Long id) {
         PaymentCard paymentCard = paymentCardRepository.getPaymentCardById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Card not found with id: " + id));
@@ -54,6 +62,7 @@ public class PaymentCardServiceImpl implements PaymentCardService {
     }
 
     @Override
+    @Cacheable(cacheNames = "cardsByUserId", key = "#userId", sync = true)
     public List<PaymentCardResponseDto> getPaymentCardsByUserId(Long userId) {
         if (!userRepository.existsById(userId)) {
             throw new EntityNotFoundException("User not found with id: " + userId);
@@ -66,6 +75,10 @@ public class PaymentCardServiceImpl implements PaymentCardService {
 
     @Override
     @Transactional
+    @Caching(
+            put = {@CachePut(cacheNames = "cardById", key = "#result.id")},
+            evict = {@CacheEvict(cacheNames = "cardsByUserId", key = "#result.userId")}
+    )
     public PaymentCardResponseDto updatePaymentCard(Long id, PaymentCardUpdateDto paymentCardUpdateDto) {
         PaymentCard paymentCard = paymentCardRepository.getPaymentCardById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Card not found with id: " + id));
@@ -76,15 +89,24 @@ public class PaymentCardServiceImpl implements PaymentCardService {
 
     @Override
     @Transactional
-    public void deletePaymentCard(Long id) {
-        if (!paymentCardRepository.existsById(id)) {
-            throw new EntityNotFoundException("Card not found with id: " + id);
-        }
+    @Caching(
+            evict = {
+                    @CacheEvict(cacheNames = "cardById", key = "#id"),
+                    @CacheEvict(cacheNames = "cardsByUserId", key = "#result.userId")
+            }
+    )
+    public PaymentCardResponseDto deletePaymentCard(Long id) {
+        PaymentCard paymentCard = paymentCardRepository.getPaymentCardById(id).orElseThrow(() -> new PaymentCardNotFoundException(id));
         paymentCardRepository.deleteById(id);
+        return paymentCardMapper.toResponseDto(paymentCard);
     }
 
     @Override
     @Transactional
+    @Caching(
+            put = {@CachePut(cacheNames = "cardById", key = "#result.id")},
+            evict = {@CacheEvict(cacheNames = "cardsByUserId", key = "#result.userId")}
+    )
     public PaymentCardResponseDto setPaymentCardActive(Long id, boolean active) {
         PaymentCard paymentCard = paymentCardRepository.getPaymentCardById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Card not found with id: " + id));

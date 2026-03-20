@@ -7,6 +7,10 @@ import com.innowise.user_service.entity.User;
 import com.innowise.user_service.mapper.UserMapper;
 import com.innowise.user_service.repository.UserRepository;
 import com.innowise.user_service.specification.UserSpecification;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@CacheConfig(cacheNames = "users")
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
@@ -26,6 +31,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CachePut(key = "#result.id")
     public UserResponseDto createUser(UserCreateDto userCreateDto) {
         User user = userMapper.toEntity(userCreateDto);
         user.setActive(true);
@@ -33,6 +39,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Cacheable(key = "#id", sync = true)
     public UserResponseDto getUserById(Long id) {
         User user = userRepository.getUserById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
@@ -49,6 +56,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CachePut(key = "#result.id")
     public UserResponseDto updateUser(Long id, UserUpdateDto userUpdateDto) {
         User user = userRepository.findById(id).
                 orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
@@ -58,6 +66,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CacheEvict(key = "#id")
     public void deleteUser(Long id) {
         if (!userRepository.existsById(id)) {
             throw new EntityNotFoundException("User not found with id: " + id);
@@ -67,6 +76,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CachePut(key = "#result.id")
     public UserResponseDto setUserActivity(Long id, boolean active) {
         User user = userRepository.findById(id).
                 orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
