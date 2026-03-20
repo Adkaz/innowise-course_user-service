@@ -9,23 +9,22 @@ import com.innowise.user_service.mapper.PaymentCardMapper;
 import com.innowise.user_service.repository.PaymentCardRepository;
 import com.innowise.user_service.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.expression.ExpressionException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 public class PaymentCardServiceImpl implements PaymentCardService {
-    @Autowired
-    private PaymentCardRepository paymentCardRepository;
+    private final PaymentCardRepository paymentCardRepository;
+    private final UserRepository userRepository;
+    private final PaymentCardMapper paymentCardMapper;
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private PaymentCardMapper paymentCardMapper;
+    public PaymentCardServiceImpl(PaymentCardRepository paymentCardRepository, UserRepository userRepository, PaymentCardMapper paymentCardMapper) {
+        this.paymentCardRepository = paymentCardRepository;
+        this.userRepository = userRepository;
+        this.paymentCardMapper = paymentCardMapper;
+    }
 
     @Override
     @Transactional
@@ -33,24 +32,17 @@ public class PaymentCardServiceImpl implements PaymentCardService {
         User user = userRepository.getUserById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id:" + userId));
 
-        int inserted = paymentCardRepository.createPaymentCard(
-                userId,
-                paymentCardCreateDto.getNumber(),
-                paymentCardCreateDto.getHolder(),
-                paymentCardCreateDto.getExpirationDate(),
-                true
-        );
-
-        if (inserted == 0) {
+        List<PaymentCard> existingCards = paymentCardRepository.getPaymentCardsByUserId(userId);
+        if (existingCards.size() >= 5) {
             throw new RuntimeException("User already has 5 cards");
         }
 
-        PaymentCard savedCard = paymentCardRepository
-                .getPaymentCardsByUserId(userId)
-                .stream()
-                .filter(card -> card.getNumber().equals(paymentCardCreateDto.getNumber()))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Card not found after insert"));
+        PaymentCard newCard = paymentCardMapper.toEntity(paymentCardCreateDto);
+        newCard.setUser(user);
+        newCard.setActive(true);
+
+        PaymentCard savedCard = paymentCardRepository.save(newCard);
+
         return paymentCardMapper.toResponseDto(savedCard);
     }
 
