@@ -37,11 +37,8 @@ public abstract class AbstractIntegrationTest {
         registry.add("spring.data.redis.host", redis::getHost);
         registry.add("spring.data.redis.port", () -> redis.getMappedPort(6379).toString());
 
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
-        registry.add("spring.jpa.show-sql", () -> "true");
-        registry.add("spring.jpa.properties.hibernate.format_sql", () -> "true");
 
-        registry.add("spring.liquibase.enabled", () -> "false");
+        registry.add("spring.liquibase.enabled", () -> "true");
 
         registry.add("spring.cache.type", () -> "redis");
         registry.add("spring.cache.redis.time-to-live", () -> "60000");
