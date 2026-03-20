@@ -8,8 +8,6 @@ import com.innowise.user_service.exception.custom.UserNotFoundException;
 import com.innowise.user_service.mapper.UserMapper;
 import com.innowise.user_service.repository.UserRepository;
 import com.innowise.user_service.specification.UserSpecification;
-import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -18,16 +16,18 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @CacheConfig(cacheNames = "users")
 public class UserServiceImpl implements UserService {
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
-    @Autowired
-    private UserMapper userMapper;
-
+    public UserServiceImpl(UserRepository userRepository, UserMapper userMapper) {
+        this.userRepository = userRepository;
+        this.userMapper = userMapper;
+    }
 
     @Override
     @Transactional
@@ -49,7 +49,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public Page<UserResponseDto> getAllUsersWithFilter(String name, String surname, Pageable pageable) {
         Specification<User> spec = UserSpecification.byNameAndSurname(name, surname);
-        Page<User> users = userRepository.getAllUsersWithFilter(spec, pageable);
+        Page<User> users = userRepository.findAll(spec, pageable);
         return users.map(userMapper::toResponseDto);
     }
 
