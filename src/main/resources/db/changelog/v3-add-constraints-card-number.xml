@@ -5,7 +5,10 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.30.xsd">
 
-    <include file="v1-create-tables.xml" relativeToChangelogFile="true"/>
-    <include file="v2-add-audit-columns.xml" relativeToChangelogFile="true"/>
-    <include file="v3-add-constraints-card-number.xml" relativeToChangelogFile="true"/>
+    <changeSet id="6" author="Pavel Kiryanov">
+        <addUniqueConstraint
+                tableName="payment_cards"
+                columnNames="number"
+                constraintName="uk_payment_cards_number"/>
+    </changeSet>
 </databaseChangeLog>

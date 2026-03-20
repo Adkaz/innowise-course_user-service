@@ -6,7 +6,6 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.30.xsd">
 
     <changeSet id="4" author="Pavel Kiryanov">
-        <comment>Add audit columns to users table</comment>
         <addColumn tableName="users">
             <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
                 <constraints nullable="false"/>
@@ -18,7 +17,6 @@
     </changeSet>
 
     <changeSet id="5" author="Pavel Kiryanov">
-        <comment>Add audit columns to payment_cards table</comment>
         <addColumn tableName="payment_cards">
             <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
                 <constraints nullable="false"/>
