@@ -1,0 +1,86 @@
+package com.innowise.userservice.service;
+
+import com.innowise.userservice.dto.UserCreateDto;
+import com.innowise.userservice.dto.UserResponseDto;
+import com.innowise.userservice.dto.UserUpdateDto;
+import com.innowise.userservice.entity.User;
+import com.innowise.userservice.exception.custom.UserNotFoundException;
+import com.innowise.userservice.mapper.UserMapper;
+import com.innowise.userservice.repository.UserRepository;
+import com.innowise.userservice.specification.UserSpecification;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@CacheConfig(cacheNames = "users")
+public class UserServiceImpl implements UserService {
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
+
+    public UserServiceImpl(UserRepository userRepository, UserMapper userMapper) {
+        this.userRepository = userRepository;
+        this.userMapper = userMapper;
+    }
+
+    @Override
+    @Transactional
+    @CachePut(key = "#result.id")
+    public UserResponseDto createUser(UserCreateDto userCreateDto) {
+        User user = userMapper.toEntity(userCreateDto);
+        user.setActive(true);
+        return userMapper.toResponseDto(userRepository.save(user));
+    }
+
+    @Override
+    @Cacheable(key = "#id", sync = true)
+    public UserResponseDto getUserById(Long id) {
+        User user = userRepository.getUserById(id)
+                .orElseThrow(() -> new UserNotFoundException(id));
+        return userMapper.toResponseDto(user);
+    }
+
+    @Override
+    public Page<UserResponseDto> getAllUsersWithFilter(String name, String surname, Pageable pageable) {
+        Specification<User> spec = UserSpecification.byNameAndSurname(name, surname);
+        Page<User> users = userRepository.findAll(spec, pageable);
+        return users.map(userMapper::toResponseDto);
+    }
+
+
+    @Override
+    @Transactional
+    @CachePut(key = "#result.id")
+    public UserResponseDto updateUser(Long id, UserUpdateDto userUpdateDto) {
+        User user = userRepository.findById(id).
+                orElseThrow(() -> new UserNotFoundException(id));
+        userMapper.updateUserFromDto(userUpdateDto, user);
+        return userMapper.toResponseDto(userRepository.save(user));
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(key = "#id")
+    public void deleteUser(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new UserNotFoundException(id);
+        }
+        userRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional
+    @CachePut(key = "#result.id")
+    public UserResponseDto setUserActivity(Long id, boolean active) {
+        User user = userRepository.findById(id).
+                orElseThrow(() -> new UserNotFoundException(id));
+        user.setActive(active);
+        return userMapper.toResponseDto(userRepository.save(user));
+    }
+}
