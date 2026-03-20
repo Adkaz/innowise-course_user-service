@@ -16,7 +16,9 @@
             <column name="surname" type="varchar(100)">
                 <constraints nullable="false"/>
             </column>
-            <column name="birth_date" type="date"/>
+            <column name="birth_date" type="date">
+                <constraints nullable="false"/>
+            </column>
             <column name="email" type="varchar(255)">
                 <constraints unique="true" nullable="false"/>
             </column>
@@ -48,6 +50,13 @@
     <changeSet id="3" author="Pavel Kiryanov">
         <createIndex indexName="idx_users_email" tableName="users">
             <column name="email"/>
+        </createIndex>
+        <createIndex indexName="idx_users_name_surname" tableName="users">
+            <column name="name"/>
+            <column name="surname"/>
+        </createIndex>
+        <createIndex indexName="idx_users_surname" tableName="users">
+            <column name="surname"/>
         </createIndex>
         <createIndex indexName="idx_payment_cards_user_id" tableName="payment_cards">
             <column name="user_id"/>

@@ -51,7 +51,7 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/{id}/active")
+    @PatchMapping("/{id}")
     public ResponseEntity<UserResponseDto> setActivity(@PathVariable Long id, @RequestParam boolean active) {
         return ResponseEntity.ok(userService.setUserActivity(id, active));
     }
