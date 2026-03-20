@@ -1,0 +1,118 @@
+package com.innowise.userservice.service;
+
+import com.innowise.userservice.dto.PaymentCardCreateDto;
+import com.innowise.userservice.dto.PaymentCardResponseDto;
+import com.innowise.userservice.dto.PaymentCardUpdateDto;
+import com.innowise.userservice.entity.PaymentCard;
+import com.innowise.userservice.entity.User;
+import com.innowise.userservice.exception.custom.CardsLimitExceededException;
+import com.innowise.userservice.exception.custom.PaymentCardNotFoundException;
+import com.innowise.userservice.exception.custom.UserNotFoundException;
+import com.innowise.userservice.mapper.PaymentCardMapper;
+import com.innowise.userservice.repository.PaymentCardRepository;
+import com.innowise.userservice.repository.UserRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+public class PaymentCardServiceImpl implements PaymentCardService {
+    private final PaymentCardRepository paymentCardRepository;
+    private final UserRepository userRepository;
+    private final PaymentCardMapper paymentCardMapper;
+
+    public PaymentCardServiceImpl(PaymentCardRepository paymentCardRepository, UserRepository userRepository, PaymentCardMapper paymentCardMapper) {
+        this.paymentCardRepository = paymentCardRepository;
+        this.userRepository = userRepository;
+        this.paymentCardMapper = paymentCardMapper;
+    }
+
+    @Override
+    @Transactional
+    @Caching(
+            put = {@CachePut(cacheNames = "cardById", key = "#result.id")},
+            evict = {@CacheEvict(cacheNames = "cardsByUserId", key = "#userId")}
+    )
+    public PaymentCardResponseDto createPaymentCard(Long userId, PaymentCardCreateDto paymentCardCreateDto) {
+        User user = userRepository.getUserById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found with id:" + userId));
+
+        List<PaymentCard> existingCards = paymentCardRepository.getPaymentCardsByUserId(userId);
+        if (existingCards.size() >= 5) {
+            throw new CardsLimitExceededException("User already has 5 cards");
+        }
+
+        PaymentCard newCard = paymentCardMapper.toEntity(paymentCardCreateDto);
+        newCard.setUser(user);
+        newCard.setActive(true);
+
+        PaymentCard savedCard = paymentCardRepository.save(newCard);
+        return paymentCardMapper.toResponseDto(savedCard);
+    }
+
+    @Override
+    @Cacheable(cacheNames = "cardById", key = "#id", sync = true)
+    public PaymentCardResponseDto getPaymentCardById(Long id) {
+        PaymentCard paymentCard = paymentCardRepository.getPaymentCardById(id)
+                .orElseThrow(() -> new PaymentCardNotFoundException(id));
+        return paymentCardMapper.toResponseDto(paymentCard);
+    }
+
+    @Override
+    @Cacheable(cacheNames = "cardsByUserId", key = "#userId", sync = true)
+    public List<PaymentCardResponseDto> getPaymentCardsByUserId(Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new UserNotFoundException(userId);
+        }
+        return paymentCardRepository.getPaymentCardsByUserId(userId)
+                .stream()
+                .map(paymentCardMapper::toResponseDto)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    @Caching(
+            put = {@CachePut(cacheNames = "cardById", key = "#result.id")},
+            evict = {@CacheEvict(cacheNames = "cardsByUserId", key = "#result.userId")}
+    )
+    public PaymentCardResponseDto updatePaymentCard(Long id, PaymentCardUpdateDto paymentCardUpdateDto) {
+        PaymentCard paymentCard = paymentCardRepository.getPaymentCardById(id)
+                .orElseThrow(() -> new PaymentCardNotFoundException(id));
+
+        paymentCardMapper.updatePaymentCardFromDto(paymentCardUpdateDto, paymentCard);
+        return paymentCardMapper.toResponseDto(paymentCardRepository.save(paymentCard));
+    }
+
+    @Override
+    @Transactional
+    @Caching(
+            evict = {
+                    @CacheEvict(cacheNames = "cardById", key = "#id"),
+                    @CacheEvict(cacheNames = "cardsByUserId", key = "#result.userId")
+            }
+    )
+    public PaymentCardResponseDto deletePaymentCard(Long id) {
+        PaymentCard paymentCard = paymentCardRepository.getPaymentCardById(id).orElseThrow(() -> new PaymentCardNotFoundException(id));
+        paymentCardRepository.deleteById(id);
+        return paymentCardMapper.toResponseDto(paymentCard);
+    }
+
+    @Override
+    @Transactional
+    @Caching(
+            put = {@CachePut(cacheNames = "cardById", key = "#result.id")},
+            evict = {@CacheEvict(cacheNames = "cardsByUserId", key = "#result.userId")}
+    )
+    public PaymentCardResponseDto setPaymentCardActive(Long id, boolean active) {
+        PaymentCard paymentCard = paymentCardRepository.getPaymentCardById(id)
+                .orElseThrow(() -> new PaymentCardNotFoundException(id));
+        paymentCard.setActive(active);
+        return paymentCardMapper.toResponseDto(paymentCardRepository.save(paymentCard));
+    }
+}
