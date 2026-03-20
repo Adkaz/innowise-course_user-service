@@ -8,7 +8,6 @@ import com.innowise.user_service.exception.custom.UserNotFoundException;
 import com.innowise.user_service.mapper.UserMapper;
 import com.innowise.user_service.repository.UserRepository;
 import com.innowise.user_service.service.UserServiceImpl;
-import com.innowise.user_service.specification.UserSpecification;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -133,7 +132,7 @@ public class UserServiceUnitTests {
         Pageable pageable = PageRequest.of(0, 10);
         Page<User> userPage = new PageImpl<>(List.of(user));
 
-        when(userRepository.getAllUsersWithFilter(any(Specification.class), eq(pageable)))
+        when(userRepository.findAll(any(Specification.class), eq(pageable)))
                 .thenReturn(userPage);
         when(userMapper.toResponseDto(user)).thenReturn(responseDto);
 
@@ -143,7 +142,7 @@ public class UserServiceUnitTests {
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().getFirst().getId()).isEqualTo(1L);
 
-        verify(userRepository).getAllUsersWithFilter(any(Specification.class), eq(pageable));
+        verify(userRepository).findAll(any(Specification.class), eq(pageable));
         verify(userMapper).toResponseDto(user);
     }
 

@@ -38,8 +38,6 @@ public class UserControllerIntegrationTest extends AbstractIntegrationTest {
                 .baseUrl("http://localhost:" + port + "/api")
                 .build();
 
-        userRepository.deleteAll();
-
         pavelUser = new UserCreateDto();
         pavelUser.setName("Pavel");
         pavelUser.setSurname("Kiryanov");
@@ -150,7 +148,12 @@ public class UserControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void getAllUsers_WithFilterByNamePavel_ShouldReturnOnlyPavel() {
-        restClient.post().uri("/users").body(pavelUser).retrieve().toBodilessEntity();
+        UserResponseDto createdPavel = restClient.post()
+                .uri("/users")
+                .body(pavelUser)
+                .retrieve()
+                .body(UserResponseDto.class);
+
         restClient.post().uri("/users").body(romanUser).retrieve().toBodilessEntity();
 
         Map<String, Object> response = restClient.get()
@@ -166,11 +169,19 @@ public class UserControllerIntegrationTest extends AbstractIntegrationTest {
         var content = (java.util.List<Map<String, Object>>) response.get("content");
         assertThat(content).hasSize(1);
         assertThat(content.get(0).get("name")).isEqualTo("Pavel");
+
+        Number idFromResponse = (Number) content.get(0).get("id");
+        assertThat(idFromResponse.longValue()).isEqualTo(createdPavel.getId());
     }
 
     @Test
     void getAllUsers_WithFilterBySurnameKiryanov_ShouldReturnOnlyPavel() {
-        restClient.post().uri("/users").body(pavelUser).retrieve().toBodilessEntity();
+        UserResponseDto createdPavel = restClient.post()
+                .uri("/users")
+                .body(pavelUser)
+                .retrieve()
+                .body(UserResponseDto.class);
+
         restClient.post().uri("/users").body(romanUser).retrieve().toBodilessEntity();
 
         Map<String, Object> response = restClient.get()
@@ -186,7 +197,9 @@ public class UserControllerIntegrationTest extends AbstractIntegrationTest {
         var content = (java.util.List<Map<String, Object>>) response.get("content");
         assertThat(content).hasSize(1);
         assertThat(content.get(0).get("surname")).isEqualTo("Kiryanov");
-        assertThat(content.get(0).get("id")).isEqualTo(1);
+
+        Number idFromResponse = (Number) content.get(0).get("id");
+        assertThat(idFromResponse.longValue()).isEqualTo(createdPavel.getId());
     }
 
     @Test
@@ -219,7 +232,9 @@ public class UserControllerIntegrationTest extends AbstractIntegrationTest {
         Map<String, Object> user = content.get(0);
         assertThat(user.get("name")).isEqualTo("Pavel");
         assertThat(user.get("surname")).isEqualTo("Kiryanov");
-        assertThat(user.get("id")).isEqualTo(1);
+
+        Number idFromResponse = (Number) user.get("id");
+        assertThat(idFromResponse.longValue()).isEqualTo(createdPavel.getId());
     }
 
     @Test
@@ -305,7 +320,7 @@ public class UserControllerIntegrationTest extends AbstractIntegrationTest {
         Long userId = createdUser.getId();
 
         UserResponseDto deactivateResponse = restClient.patch()
-                .uri("/users/{id}/active?active=false", userId)
+                .uri("/users/{id}?active=false", userId)
                 .retrieve()
                 .body(UserResponseDto.class);
 
@@ -313,7 +328,7 @@ public class UserControllerIntegrationTest extends AbstractIntegrationTest {
         assertThat(deactivateResponse.isActive()).isFalse();
 
         UserResponseDto activateResponse = restClient.patch()
-                .uri("/users/{id}/active?active=true", userId)
+                .uri("/users/{id}?active=true", userId)
                 .retrieve()
                 .body(UserResponseDto.class);
 
