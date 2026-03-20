@@ -7,6 +7,5 @@
 
     <include file="v1-create-tables.xml" relativeToChangelogFile="true"/>
     <include file="v2-add-audit-columns.xml" relativeToChangelogFile="true"/>
-    <include file="v3-add-constraints-birth-date.xml" relativeToChangelogFile="true"/>
-    <include file="v4-add-constraints-card-number.xml" relativeToChangelogFile="true"/>
+    <include file="v3-add-constraints-card-number.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
