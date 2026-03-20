@@ -20,6 +20,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -86,15 +88,9 @@ class PaymentCardServiceUnitTests {
     @Test
     void createPaymentCard_Success() {
         when(userRepository.getUserById(1L)).thenReturn(Optional.of(user));
-        when(cardRepository.createPaymentCard(
-                eq(1L),
-                eq("1234567890123456"),
-                eq("PAVEL KIRYANOV"),
-                eq("12/25"),
-                eq(true)
-        )).thenReturn(1);
-
-        when(cardRepository.getPaymentCardsByUserId(1L)).thenReturn(List.of(card));
+        when(cardRepository.getPaymentCardsByUserId(1L)).thenReturn(Collections.emptyList());
+        when(cardMapper.toEntity(createDto)).thenReturn(card);
+        when(cardRepository.save(any(PaymentCard.class))).thenReturn(card);
         when(cardMapper.toResponseDto(card)).thenReturn(responseDto);
 
         PaymentCardResponseDto result = cardService.createPaymentCard(1L, createDto);
@@ -103,14 +99,15 @@ class PaymentCardServiceUnitTests {
         assertThat(result.getId()).isEqualTo(1L);
 
         verify(userRepository).getUserById(1L);
-        verify(cardRepository).createPaymentCard(
-                eq(1L),
-                eq("1234567890123456"),
-                eq("PAVEL KIRYANOV"),
-                eq("12/25"),
-                eq(true)
-        );
         verify(cardRepository).getPaymentCardsByUserId(1L);
+        verify(cardMapper).toEntity(createDto);
+
+        ArgumentCaptor<PaymentCard> cardCaptor = ArgumentCaptor.forClass(PaymentCard.class);
+        verify(cardRepository).save(cardCaptor.capture());
+
+        PaymentCard savedCard = cardCaptor.getValue();
+        assertThat(savedCard).isEqualTo(card);
+
         verify(cardMapper).toResponseDto(card);
     }
 
@@ -123,32 +120,26 @@ class PaymentCardServiceUnitTests {
                 .hasMessageContaining("99");
 
         verify(userRepository).getUserById(99L);
-        verify(cardRepository, never()).createPaymentCard(anyLong(), anyString(), anyString(), anyString(), anyBoolean());
+        verify(cardRepository, never()).getPaymentCardsByUserId(anyLong());
+        verify(cardRepository, never()).save(any(PaymentCard.class));
     }
 
     @Test
     void createPaymentCard_LimitExceeded_ThrowsException() {
+        List<PaymentCard> existingCards = Arrays.asList(new PaymentCard(), new PaymentCard(),
+                new PaymentCard(), new PaymentCard(), new PaymentCard());
+
         when(userRepository.getUserById(1L)).thenReturn(Optional.of(user));
-        when(cardRepository.createPaymentCard(
-                eq(1L),
-                eq("1234567890123456"),
-                eq("PAVEL KIRYANOV"),
-                eq("12/25"),
-                eq(true)
-        )).thenReturn(0);
+        when(cardRepository.getPaymentCardsByUserId(1L)).thenReturn(existingCards);
 
         assertThatThrownBy(() -> cardService.createPaymentCard(1L, createDto))
                 .isInstanceOf(CardsLimitExceededException.class)
-                .hasMessageContaining("1");
+                .hasMessageContaining("already has 5 cards");
 
         verify(userRepository).getUserById(1L);
-        verify(cardRepository).createPaymentCard(
-                eq(1L),
-                eq("1234567890123456"),
-                eq("PAVEL KIRYANOV"),
-                eq("12/25"),
-                eq(true)
-        );
+        verify(cardRepository).getPaymentCardsByUserId(1L);
+        verify(cardMapper, never()).toEntity(any());
+        verify(cardRepository, never()).save(any(PaymentCard.class));
     }
 
     @Test
