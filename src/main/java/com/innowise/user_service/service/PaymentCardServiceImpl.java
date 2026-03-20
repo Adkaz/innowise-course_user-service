@@ -57,7 +57,7 @@ public class PaymentCardServiceImpl implements PaymentCardService {
     @Cacheable(cacheNames = "cardById", key = "#id", sync = true)
     public PaymentCardResponseDto getPaymentCardById(Long id) {
         PaymentCard paymentCard = paymentCardRepository.getPaymentCardById(id)
-                .orElseThrow(() -> new PaymentCardNotFoundException(id));
+                .orElseThrow(() -> new EntityNotFoundException("Card not found with id: " + id));
         return paymentCardMapper.toResponseDto(paymentCard);
     }
 
@@ -65,7 +65,7 @@ public class PaymentCardServiceImpl implements PaymentCardService {
     @Cacheable(cacheNames = "cardsByUserId", key = "#userId", sync = true)
     public List<PaymentCardResponseDto> getPaymentCardsByUserId(Long userId) {
         if (!userRepository.existsById(userId)) {
-            throw new UserNotFoundException(userId);
+            throw new EntityNotFoundException("User not found with id: " + userId);
         }
         return paymentCardRepository.getPaymentCardsByUserId(userId)
                 .stream()
@@ -81,7 +81,7 @@ public class PaymentCardServiceImpl implements PaymentCardService {
     )
     public PaymentCardResponseDto updatePaymentCard(Long id, PaymentCardUpdateDto paymentCardUpdateDto) {
         PaymentCard paymentCard = paymentCardRepository.getPaymentCardById(id)
-                .orElseThrow(() -> new PaymentCardNotFoundException(id));
+                .orElseThrow(() -> new EntityNotFoundException("Card not found with id: " + id));
 
         paymentCardMapper.updatePaymentCardFromDto(paymentCardUpdateDto, paymentCard);
         return paymentCardMapper.toResponseDto(paymentCardRepository.save(paymentCard));
@@ -109,7 +109,7 @@ public class PaymentCardServiceImpl implements PaymentCardService {
     )
     public PaymentCardResponseDto setPaymentCardActive(Long id, boolean active) {
         PaymentCard paymentCard = paymentCardRepository.getPaymentCardById(id)
-                .orElseThrow(() -> new PaymentCardNotFoundException(id));
+                .orElseThrow(() -> new EntityNotFoundException("Card not found with id: " + id));
         paymentCard.setActive(active);
         return paymentCardMapper.toResponseDto(paymentCardRepository.save(paymentCard));
     }
